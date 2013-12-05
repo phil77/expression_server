@@ -1,0 +1,11 @@
+.eunit/
+*.beam
+ebin/
+doc/
+*.swp
+erl_crash.dump
+.project
+log/
+deps/
+calc_lexer.erl
+calc_parser.erl
