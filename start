@@ -1,2 +1,2 @@
 #!/bin/sh
-rebar compile && erl -pa ebin deps/*/ebin -s expression_server
+rebar compile && erl -pa ebin deps/*/ebin

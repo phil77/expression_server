@@ -1,5 +1,5 @@
 -module(myprotocol).
-%-compile([{parse_transform, lager_transform}]).
+-compile([{parse_transform, lager_transform}]).
 -behaviour(ranch_protocol).
 
 -export([start_link/4]).
@@ -11,7 +11,7 @@ start_link(Ref, Socket, Transport, Opts) ->
 
 init(Ref, Socket, Transport, _Opts = []) ->
     ok = ranch:accept_ack(Ref),
-%    lager:info("User [~p] has just logged in"),
+    lager:info("~p User has logged in", [self()]),
     Transport:send(Socket, <<"Welcome to Expression Calculator\nType 'quit' to end this session\n\n">>),
     loop(Socket, Transport, dict:new()).
 
@@ -23,13 +23,14 @@ loop(Socket, Transport, Context) ->
                 case handle_data(Data, Context) of
                     {reply, Answer, NewContext} -> Transport:send(Socket, Answer), loop(Socket, Transport, NewContext);
                     noreply         -> loop(Socket, Transport, Context);
-                    quit            -> Transport:send(Socket, <<"Bye bye\n">>), ok = Transport:close(Socket);
-                    _               -> Transport:send(Socket, <<"Internal error\n">>), ok = Transport:close(Socket)
+                    quit            -> Transport:send(Socket, <<"Bye bye\n">>), close(Transport, Socket);
+                    _               -> Transport:send(Socket, <<"Internal error\n">>), close(Transport, Socket)
                 end;
             {Closed, Socket} ->
+                lager:info("~p User has disconnected. Socket closed", [self()]),
                 ok;
             {Error, Socket, _} ->
-                ok = Transport:close(Socket)
+                ok = close(Transport, Socket)
         end.
 
 handle_data(<<"\r", _/binary>>, _Context) ->
@@ -42,7 +43,13 @@ handle_data(Data, Context) ->
             { reply, io_lib:format("~p\n", [Result]), NewContext }
     catch
         {error, _ErrorContext, Message, Values} ->
+            lager:error("~p ~p ~p", [self(), Message, Values]),
             {reply, io_lib:format("error: ~p ~p~n", [Message, Values]), Context};
         {error, _ErrorContext, Message} ->
+            lager:error("~p ~p", [self(), Message]),
             {reply, io_lib:format("error: ~p~n", [Message]), Context}
     end.
+
+close(Transport, Socket) ->
+    lager:info("~p User has disconnected", [self()]),
+    ok = Transport:close(Socket).
