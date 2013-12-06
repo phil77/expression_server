@@ -23,11 +23,11 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    RanchSupSpec = {ranch_sup, {ranch_sup, start_link, []},
-        permanent, 5000, supervisor, [ranch_sup]},
+%    RanchSupSpec = {ranch_sup, {ranch_sup, start_link, []},
+%        permanent, 5000, supervisor, [ranch_sup]},
     ListenerSpec = ranch:child_spec(echo, 100,
         ranch_tcp, [{port, 1234}],
         myprotocol, []
     ),
-    {ok, { {one_for_one, 5, 10}, [RanchSupSpec, ListenerSpec] } }.
+    {ok, { {one_for_one, 5, 10}, [ListenerSpec] } }.
 
